@@ -1,0 +1,237 @@
+LanceBags Project Notes (readme.txt)
+===================================
+
+This document tracks the changes we have added to LanceBags (AdiBags fork for 3.3.5)  
+and important notes about how to extend it safely.
+
+------------------------------------------------------------
+Step 1: Move the Search Bar
+------------------------------------------------------------
+File: modules/SearchHighlight.lua
+Change: The search box was moved from the top header region down into the bottom-left corner of the bag frame.
+
+Implementation:
+- Originally created in OnBagFrameCreated() with:
+    frame:AddHeaderWidget(searchEditBox, -10, 100, -1)
+- We instead used:
+    frame:AddBottomWidget(searchEditBox, "LEFT", 50, 20, 10, 0)
+- Insets adjusted to keep spacing clear from money display.
+
+Notes:
+- AddBottomWidget() automatically anchors to bottom-left or bottom-right regions.
+- Search bar did not require manual SetFrameLevel because bottom widgets are layered correctly.
+- Spacing can be fine-tuned with the parameters passed to AddBottomWidget.
+
+------------------------------------------------------------
+Step 2: Add View Mode Buttons (Cat, Bag, One)
+------------------------------------------------------------
+File: modules/ViewButtons.lua (new)
+Change: Added three buttons ("Cat", "Bag", "One") to the header next to the close button.
+
+Implementation:
+- New AceEvent-based module loaded after ContainerFrame.lua.
+- Hooked into bag frame creation:
+    addon:HookBagFrameCreation(self, "OnBagFrameCreated")
+- Created buttons using UIPanelButtonTemplate.
+- Added to HeaderRightRegion (which flows right-to-left).
+- For debugging, clicks just printed messages at first.
+
+Notes:
+- Must add buttons in reverse order (since region fills right-to-left).
+- Always use SetFrameLevel when adding widgets near the anchor/close button.
+- Early phase confirmed that buttons rendered and responded to clicks.
+
+------------------------------------------------------------
+Step 3: Wire Cat/Bag Buttons to Switch Views
+------------------------------------------------------------
+File: modules/ViewButtons.lua
+Change: Cat and Bag buttons now mimic Backpack button behavior.
+
+Implementation:
+- Original Backpack logic: toggled visibility of BagSlotPanel.
+- We copied this approach exactly:
+    Cat button -> frame.BagSlotPanel:Hide()
+    Bag button -> frame.BagSlotPanel:Show()
+- One button placeholder left unimplemented.
+
+Notes:
+- Did not touch showBagSections or broadcast AdiBags events.
+- AdiBags always keeps Bag and Category panels updated; only visibility changes.
+- Mimicking Backpack guarantees stable, tested behavior.
+
+------------------------------------------------------------
+Step 4: Simplify Buttons to a Single Toggle
+------------------------------------------------------------
+File: modules/ViewButtons.lua
+Change: Merged Cat and Bag buttons into one toggle button.
+
+Implementation:
+- Toggle button created in HeaderRightRegion.
+- Button text and tooltip update dynamically:
+    If BagSlotPanel visible -> text = “Cat” -> clicking switches to Category view.
+    If BagSlotPanel hidden -> text = “Bag” -> clicking switches to Bag view.
+- Tooltips provide context about what will happen next.
+- One button hidden completely.
+
+Notes:
+- Cleaner UI, fewer buttons.
+- Dynamic text + tooltip avoids confusion.
+- Chat prints confirm state changes for debugging:
+    |cFF33FF99LanceBags:|r Switched to CATEGORY view
+    |cFF33FF99LanceBags:|r Switched to BAG view
+
+------------------------------------------------------------
+Step 4.1: Rewire Backpack Button
+------------------------------------------------------------
+File: widgets/ContainerFrame.lua
+Change: Backpack button now opens the LanceBags config panel instead of toggling Bag view.
+
+Implementation:
+- Old:
+    bagSlotButton:SetScript('OnClick', BagSlotButton_OnClick)
+- New:
+    bagSlotButton:SetScript('OnClick', function()
+        addon:OpenOptions()
+    end)
+- Updated tooltip text to:
+    LanceBags Options
+    Click to open the configuration menu.
+
+Notes:
+- Backpack is now the universal “settings” button.
+- Only the toggle button handles Cat/Bag view switching.
+- This separation of duties simplifies user experience.
+
+------------------------------------------------------------
+Step 5: Bank Frame Integration
+------------------------------------------------------------
+Change: Applied the same toggle logic to Bank frame.
+
+Implementation:
+- ViewButtons.lua updated so OnBagFrameCreated does not stop at Backpack.
+- Now runs for both Backpack and Bank frames.
+- Each frame gets its own toggle button in HeaderRightRegion.
+- Both buttons function identically, toggling their respective frame’s BagSlotPanel.
+
+Notes:
+- Bank toggle reuses same code path, no duplication.
+- Verified that bank and backpack both respond independently.
+- We chose not to unify both with one global toggle because bank may be open separately.
+
+------------------------------------------------------------
+Framework Lessons
+------------------------------------------------------------
+1. Always hook into AdiBags lifecycle (OnBagFrameCreated) instead of patching ContainerFrame.lua directly.
+2. Panels are always alive. Toggling views is purely visibility, not rebuilding frames.
+3. Keep roles clear:
+   - Backpack = config entry point.
+   - Toggle button = view switching.
+4. Safe extension strategy:
+   - Add modules (SearchHighlight.lua, ViewButtons.lua).
+   - Limit edits in ContainerFrame.lua to absolute necessities (like Backpack repurposing).
+5. Debugging:
+   - Chat prints and self:Debug() calls are invaluable for verifying flow.
+   - Debug confirmed button presses long before they actually worked.
+
+
+
+
+Step 6: Implement "One Bag" View & Unify View Toggle
+File(s): modules/ViewButtons.lua, widgets/Section.lua, Options.lua
+Change: The view toggle button was evolved from a simple panel visibility switch into a true, global view mode system supporting "Category", "Bag", and "One Bag" views. This new system affects item sorting and layout.
+
+Implementation:
+
+A new global database setting, viewMode, was created to store the current state ("category", "bag", or "onebag").
+
+The sorting function CompareButtons() in Section.lua was significantly modified to have three distinct behaviors based on the viewMode:
+
+"bag" view now sorts items by their physical slot ID for an authentic, unsorted layout.
+
+"onebag" and "category" views use the addon's standard item property-based sorting.
+
+The toggle button logic in ViewButtons.lua was updated to cycle through all three modes by calling a central function, addon:CycleViewMode().
+
+The button's text ("Cat", "Bag", "One") and its tooltip now update dynamically based on the global viewMode setting.
+
+The view buttons on the Backpack and Bank frames were synchronized to ensure they both reflect the single global viewMode, fixing a bug where they would become out of sync.
+
+Notes:
+
+This was a major architectural change, moving from a simple UI toggle to a data-driven display controller.
+
+This change unified the user experience between the bank and backpack.
+
+Step 7: Add Custom Sorting for "One Bag" View
+File(s): widgets/Section.lua, Options.lua, LanceBags.lua
+Change: Created a new, configurable sorting order specifically for the "One Bag" view, making it independent from the "Category" view's sorting rules.
+
+Implementation:
+
+A new "One Bag View Sorting" dropdown menu was added to the options panel in Options.lua.
+
+The existing "Sorting order" option was repurposed to only affect the "Category" view.
+
+This required creating two new database settings, categorySortingOrder and oneBagSortingOrder, and updating the DEFAULT_SETTINGS in LanceBags.lua.
+
+The CompareButtons() function in Section.lua was enhanced to read the oneBagSortingOrder setting when the "onebag" view is active, applying rules such as "empty slots first" followed by quality and item level.
+
+The ConfigChanged() and OnEnable() functions were updated to ensure sorting changes are applied instantly and on login.
+
+Notes:
+
+This provides deeper user customization for different view modes.
+
+It required careful integration with the addon's event and configuration systems to ensure responsiveness.
+
+Step 8: Add Sell Junk Button
+File(s): widgets/ContainerFrame.lua
+Change: Added a new button to the bag frame that allows the user to sell all grey-quality (junk) items to a vendor with a single click.
+
+Implementation:
+
+A new button was created in the OnCreate() function of the container frame.
+
+It was positioned in the HeaderRightRegion using the AddWidget method for consistency with other header buttons.
+
+The button's OnClick script iterates through all bag slots, checks for junk-quality items using GetItemInfo(), and calls UseContainerItem() to sell them.
+
+The button's visibility is managed by registering for the MERCHANT_SHOW and MERCHANT_CLOSED events, so it only appears at vendors.
+
+The script was later enhanced to calculate the total value of all items sold and print a summary to the chat window using GetMoneyString().
+
+Notes:
+
+This is a significant quality-of-life improvement that automates a tedious task.
+
+The feature relies entirely on standard, safe Blizzard API functions.
+
+Step 9: Add Dynamic Gold Summary Tooltip
+File(s): LanceBags.lua, modules/MoneyFrame.lua
+Change: Added a detailed, dynamic tooltip to the money display. The tooltip shows the current character's gold, the total vendor value of all junk in the bags, and the last saved gold totals of other characters on the same realm.
+
+Implementation:
+
+Data Collection: A new function, UpdateCharacterGold(), was added to LanceBags.lua. It saves the current character's name, class, and gold to a realm-wide table within the LanceBagsDB SavedVariables. This function is triggered by the PLAYER_LOGIN and PLAYER_MONEY events to keep the data current. The database DEFAULT_SETTINGS were updated to support this new realm profile.
+
+Display: The logic was implemented entirely within MoneyFrame.lua for better encapsulation and to resolve complex frame layering issues.
+
+A new, invisible "footer" frame was created to act as a horizontal container in the bottom-right of the bag.
+
+A new clickable "GOLD" button and the existing MoneyFrame were placed side-by-side inside this container.
+
+A custom OnEnter script was attached to the "GOLD" button. This script builds the tooltip on-the-fly by:
+
+Reading the current character's gold.
+
+Scanning all bags to calculate the total junk value.
+
+Reading the LanceBagsDB.realm.characters table to list other characters' saved gold, complete with class coloring.
+
+Notes:
+
+This feature required extensive debugging to solve UI layering and frame visibility bugs.
+
+The final, stable solution demonstrates a robust method for creating complex horizontal layouts in the addon's vertical-stacking regions.
+
+It serves as a prime example of using AceDB-3.0 for persistent, cross-character data storage.
