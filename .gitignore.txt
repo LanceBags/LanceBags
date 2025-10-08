@@ -1,0 +1,21 @@
+# Ignore packaging folders
+.release/
+pkg/
+
+# Ignore dependency management folders
+Libs/
+libs/
+lib/
+LibStub/
+CallbackHandler-1.0/
+Ace3/
+Ace2/
+AceGUI-3.0-SharedMediaWidgets/
+
+# Ignore OS-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore editor/IDE files
+.vscode/
+*.bak
