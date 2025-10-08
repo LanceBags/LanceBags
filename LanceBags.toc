@@ -61,5 +61,6 @@ modules\ItemLevel.lua
 modules\BankSwitcher.lua
 modules\ViewButtons.lua
 modules\FinanceTracker.lua
+modules\AltViewer.lua
 DefaultFilters.lua
 
