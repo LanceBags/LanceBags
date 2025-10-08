@@ -19,3 +19,7 @@ Thumbs.db
 # Ignore editor/IDE files
 .vscode/
 *.bak
+
+UpgradeArrow.tga
+Ace*.*
+
