@@ -1,14 +1,10 @@
 ## Interface: 30300
-## X-GitHub-Repository: Sattva-108/LanceBags-WoTLK-3.3.5
-## X-GitHub-Project-Homepage: https://github.com/Sattva-108/LanceBags-WoTLK-3.3.5
-## X-GitHub-Project-Licence: MIT
-## X-GitHub-Project-Issues: https://github.com/Sattva-108/LanceBags-WoTLK-3.3.5/issues
-## X-GitHub-Project-Download: https://github.com/Sattva-108/LanceBags-WoTLK-3.3.5/archive/refs/heads/main.zip
+## X-GitHub-Repository: LanceBags
 
 ## Title: LanceBags
-## Notes: LanceBags - forked from LanceBags
-## Author: Adirelle, backported to 3.3.5 by Sattva#7238 - discord
-## Version: 3.3.5
+## Notes: LanceBags - forked from AdiBags
+## Author: Lance and Adirelle, backported to 3.3.5 by Sattva#7238 - discord
+## Version: 1.0
 ## SavedVariables: LanceBagsDB
 ## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibBabble-Inventory-3.0, AdiDebug, LibSharedMedia-3.0, Scrap, BrainDead, ProfessionsVault, Masque
 
