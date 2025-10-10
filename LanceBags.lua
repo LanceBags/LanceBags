@@ -1248,3 +1248,4 @@ function addon:Filter(slotData, defaultSection, defaultCategory)
 	end
 	return defaultSection, defaultCategory
 end
+

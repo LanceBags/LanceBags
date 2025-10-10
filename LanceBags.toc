@@ -51,7 +51,9 @@ modules\DataSource.lua
 modules\SearchHighlight.lua
 modules\NewItemTracking.lua
 modules\TidyBags.lua
-modules\MoneyFrame.lua
+modules\Money.lua
+modules\JunkSell.lua
+modules\Gold.lua
 modules\FilterOverride.lua
 modules\Junk.lua
 # modules\CurrencyFrame.lua

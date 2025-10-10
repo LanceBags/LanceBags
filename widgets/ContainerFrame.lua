@@ -144,7 +144,7 @@ function containerProto:OnCreate(name, bagIds, isBank)
 	self.BottomLeftRegion = bottomLeftRegion
 	self:AddWidget(bottomLeftRegion)
 	bottomLeftRegion:SetFrameLevel(minFrameLevel)
-	local bottomRightRegion = SimpleLayeredRegion:Create(self, "BOTTOMRIGHT", "UP", 4)
+	local bottomRightRegion = SimpleLayeredRegion:Create(self, "BOTTOMRIGHT", "LEFT", 4)
 	bottomRightRegion:SetPoint("BOTTOMRIGHT", -BAG_INSET, BAG_INSET)
 	self.BottomRightRegion = bottomRightRegion
 	self:AddWidget(bottomRightRegion)
